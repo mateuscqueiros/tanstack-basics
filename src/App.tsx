@@ -1,28 +1,38 @@
-import { useQuery } from "@tanstack/react-query";
 import "./App.css";
-import { axios } from "./lib/axios";
+import { useCreateUser } from "./features/users/api/create-user";
+import { useUsers } from "./features/users/api/fetch-users";
 
-export function fetchUsers() {
-  return axios.get("/users").then((response) => response.data.users);
-}
 function App() {
-  const {
-    data: users,
-    isPending,
-    isError,
-  } = useQuery({
-    queryKey: ["users"],
-    queryFn: fetchUsers,
-  });
+  // Queries
+  const { data: users, isPending, isError } = useUsers();
+  const mutation = useCreateUser();
 
   if (isPending) return <>Carregando...</>;
   if (isError) return <>Houve um erro</>;
 
   return (
     <>
-      {users.map((user: any) => (
-        <p key={user.id}>{user.firstName}</p>
-      ))}
+      <button
+        disabled={mutation.isPending}
+        onClick={() => {
+          mutation.mutate({ firstName: "Mateus", lastName: "Queirós" });
+        }}
+      >
+        {mutation.isPending && "Trabalhando nisso..."}
+        {mutation.isError && "Resetar"}
+        {!mutation.isPending && !mutation.isError && "Add user"}
+      </button>
+      {isError && (
+        <button onClick={() => isError && mutation.reset()}>
+          Resetar erro
+        </button>
+      )}
+      {mutation.isError && (
+        <i style={{ display: "block" }}>
+          Houve um erro: {mutation.error.message}
+        </i>
+      )}
+      {users && users.map((user: any) => <p key={user.id}>{user.firstName}</p>)}
     </>
   );
 }
